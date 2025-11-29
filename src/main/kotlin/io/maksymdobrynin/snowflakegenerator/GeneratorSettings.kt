@@ -7,4 +7,5 @@ data class GeneratorSettings(
 	var workedId: Long = 1,
 	var nextTimeSeed: () -> Long = { System.currentTimeMillis() },
 	var sequence: Long = 0L,
+	var podName: String = "default"
 )

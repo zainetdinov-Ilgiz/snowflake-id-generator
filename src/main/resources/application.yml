@@ -6,6 +6,7 @@ snowflake-settings:
   starting-epoch: 946684800
   datacenter-id: 1
   worked-id: 1
+  podName: ${POD_NAME:local}
 
 management:
   endpoints:

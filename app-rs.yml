@@ -15,6 +15,11 @@ spec:
       containers:
         - image: snowflake-id-generator:1.0.0
           name: snowflake-id-generator
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
           livenessProbe:
             httpGet:
               path: /management/health/livenessState

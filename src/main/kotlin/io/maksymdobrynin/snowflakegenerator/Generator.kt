@@ -1,5 +1,6 @@
 package io.maksymdobrynin.snowflakegenerator
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -17,6 +18,8 @@ class Generator(
 		private const val WORKER_BITS = 5
 		private const val SEQUENCE_BITS = 12
 	}
+
+	private val logger = KotlinLogging.logger{}
 
 	/**
 	 * Maximum possible to be stored in 5-bits as datacenter id.
@@ -46,6 +49,7 @@ class Generator(
 	 */
 	private val lock = Mutex()
 	private var lastTimestamp = 0L
+	private val podName = settings.podName
 
 	init {
 		require(settings.startingEpoch >= 0 && settings.startingEpoch <= Long.MAX_VALUE) {
@@ -88,6 +92,8 @@ class Generator(
 			}
 
 			lastTimestamp = timestamp
+
+			logger.info { "Пришел запрос на Pod: $podName" }
 
 			return ((lastTimestamp - settings.startingEpoch) shl timestampIdShift) or
 				(settings.datacenterId shl datacenterIdShift) or

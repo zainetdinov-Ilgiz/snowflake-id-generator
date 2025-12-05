@@ -22,6 +22,7 @@ repositories {
 
 dependencies {
 	implementation(libs.kotlin.stdlib)
+	implementation(libs.kotlin.logger)
 	implementation(libs.kotlinx.coroutines)
 	implementation(libs.springframework.boot.starter.web)
 	implementation(libs.springframework.boot.starter.actuator)

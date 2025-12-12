@@ -1,5 +1,5 @@
 # Build stage
-FROM eclipse-temurin:21-jdk-jammy as builder
+FROM eclipse-temurin:21-jdk-jammy AS builder
 WORKDIR /app
 
 COPY build.gradle.kts settings.gradle.kts gradlew ./
@@ -9,7 +9,7 @@ RUN ./gradlew dependencies || return 0
 
 COPY src src
 
-RUN ./gradlew clean build -x test -x ktlintKotlinScriptCheck -x ktlintTestSourceSetCheck -x ktlintMainSourceSetCheck
+RUN chmod +x gradlew && ./gradlew clean build -x test -x ktlintKotlinScriptCheck -x ktlintTestSourceSetCheck -x ktlintMainSourceSetCheck
 
 # Runtime stage
 

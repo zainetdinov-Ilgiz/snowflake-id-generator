@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  SPRING_APPLICATION_NAME: "Snowflake ID Generator"
+  SNOWFLAKE-SETTINGS_STARTING-EPOCH: "946684800"
+  SNOWFLAKE-SETTINGS_DATACENTER-ID: "1"

@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-ingress
+  annotations:
+    kubernetes.io/ingress.class: contour
+spec:
+  ingressClassName: contour
+  tls:
+    - hosts:
+        - snowflake.dev.local
+      secretName: app-tls
+  rules:
+    - host: snowflake.dev.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: snowflake-service
+                port:
+                  number: 80

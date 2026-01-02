@@ -1,0 +1,115 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: snowflake-deployment
+  labels:
+    app: snowflake-id-generator
+  annotations:
+    kubernetes.io/change-cause: "Update to 1.0.0"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: snowflake-id-generator
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  template:
+    metadata:
+      labels:
+        app: snowflake-id-generator
+    spec:
+      initContainers:
+        - name: init-worker-id
+          image: alpine:latest
+          command: [ "sh", "-c" ]
+          args:
+            - |
+              POD_HASH=$(echo "$HOSTNAME" | cksum | awk '{print $1}')
+              WORKER_ID=$(( (POD_HASH % 31) + 1 ))
+              echo "$WORKER_ID" > /shared-data/worker-id
+          volumeMounts:
+            - mountPath: /shared-data
+              name: shared-data
+      containers:
+        - image: snowflake-id-generator:1.0.0
+          name: snowflake-id-generator
+          env:
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: POSTGRES_URL
+                  name: app-config
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: username
+                  name: app-postgres-auth
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: app-postgres-auth
+            - name: SPRING_APPLICATION_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: SPRING_APPLICATION_NAME
+                  name: app-config
+            - name: SNOWFLAKE-SETTINGS_STARTING-EPOCH
+              valueFrom:
+                configMapKeyRef:
+                  key: SNOWFLAKE-SETTINGS_STARTING-EPOCH
+                  name: app-config
+            - name: SNOWFLAKE-SETTINGS_DATACENTER-ID
+              valueFrom:
+                configMapKeyRef:
+                  key: SNOWFLAKE-SETTINGS_DATACENTER-ID
+                  name: app-config
+          command: [ "sh", "-c" ]
+          args:
+            - |
+              _ID=$(cat /shared-data/worker-id)
+              exec java -jar app.jar --snowflake-settings.worked-id="$_ID"
+          volumeMounts:
+            - name: app-config-volume
+              mountPath: /config
+              readOnly: true
+            - name: shared-data
+              mountPath: /shared-data
+              readOnly: true
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "500Mi"
+          livenessProbe:
+            httpGet:
+              path: /management/health/livenessState
+              port: 8080
+            initialDelaySeconds: 15
+            timeoutSeconds: 2
+            periodSeconds: 20
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /management/health/readinessState
+              port: 8080
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+            periodSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+      volumes:
+        - name: app-config-volume
+          configMap:
+            name: app-config
+        - name: shared-data
+          emptyDir: {}
